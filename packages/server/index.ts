@@ -47,6 +47,10 @@ app.get('/', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/hello', (req: Request, res: Response) => {
+  res.json({ message: 'Hello from the server!' });
+})
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
