@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import tailwindcss from 'tailwindcss';
+import {Button} from "@/components/ui/button.tsx";
 
 function App() {
   const [message, setMessage] = useState('');
@@ -14,7 +14,10 @@ function App() {
   console.log('Message from server:', message);
 
   return (
-    <p className="font-bold p-4 text-4xl">{message}</p>
+      <div className={"p-4"}>
+        <p className="font-bold text-4xl">{message}</p>
+        <Button onClick={() => console.log('Button clicked')}>Click me</Button>
+      </div>
   )
 }
 
