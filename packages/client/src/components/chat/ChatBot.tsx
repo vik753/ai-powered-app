@@ -1,10 +1,11 @@
 import axios from 'axios';
-import ReactMarkdown from 'react-markdown';
-import { Button } from './ui/button';
+import { Button } from '../ui/button.tsx';
 import { FaArrowUp } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
 import { useEffect, useRef, useState } from 'react';
 import * as React from 'react';
+import { TypingIndicator } from '@/components/chat/TypingIndicator.tsx';
+import { ChatMessage } from '@/components/chat/ChatMessage.tsx';
 
 type FormData = {
   prompt: string;
@@ -14,7 +15,7 @@ type ChatResponse = {
   message: string;
 };
 
-type Message = {
+export type Message = {
   content: string;
   role: 'user' | 'bot';
 };
@@ -63,40 +64,19 @@ const ChatBot = () => {
     }
   };
 
-  const onCopyMessage = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const selectedText = window.getSelection()?.toString().trim();
-    if (selectedText) {
-      e.preventDefault();
-      e.clipboardData.setData('text/plain', selectedText);
-    }
-  };
-
   return (
     <div className={'flex flex-col h-full'}>
       <div className={'flex flex-col p-4 gap-y-4 mb-4 flex-1 overflow-y-auto'}>
         {messages.map((message, index) => (
-          <div
+          <ChatMessage
             key={index}
-            className={`px-3 py-1 rounded-xl max-w-2/3
-              ${
-                message.role === 'user'
-                  ? 'self-end bg-blue-600 text-white '
-                  : 'self-start bg-gray-100 text-black'
-              }`}
-            onCopy={onCopyMessage}
-            ref={index === messages.length - 1 ? lastMessageRef : null}
-          >
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
+            index={index}
+            message={message}
+            lastMessageRef={lastMessageRef}
+            messagesLength={messages.length}
+          />
         ))}
-        {isBotTyping && (
-          <div className={'flex gap-1 px-3 py-1'}>
-            <div className=" w-3 h-3 bg-neutral-800 rounded-xl animate-pulse"></div>
-            <div className="w-3 h-3 bg-neutral-800 rounded-xl animate-pulse [animation-delay:0.2s]"></div>
-            <div className="w-3 h-3 bg-neutral-800 rounded-xl animate-pulse [animation-delay:0.4s]"></div>
-          </div>
-        )}
+        {isBotTyping && <TypingIndicator />}
         {error && <div className="text-red-500">{error}</div>}
       </div>
       <form
