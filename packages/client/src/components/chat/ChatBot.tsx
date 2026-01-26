@@ -70,10 +70,10 @@ const ChatBot = () => {
         {messages.map((message, index) => (
           <ChatMessage
             key={index}
-            index={index}
             message={message}
-            lastMessageRef={lastMessageRef}
-            messagesLength={messages.length}
+            lastMessageRef={
+              index === messages.length - 1 ? lastMessageRef : null
+            }
           />
         ))}
         {isBotTyping && <TypingIndicator />}

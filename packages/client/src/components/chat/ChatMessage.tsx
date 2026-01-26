@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type RefObject } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -6,18 +6,11 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Message } from '@/components/chat/ChatBot.tsx';
 
 interface ChatMessageProps {
-  index: number;
   message: Message;
-  messagesLength: number;
-  lastMessageRef: React.RefObject<HTMLDivElement | null>;
+  lastMessageRef: RefObject<HTMLDivElement | null> | null;
 }
 
-export const ChatMessage = ({
-  index,
-  message,
-  messagesLength,
-  lastMessageRef,
-}: ChatMessageProps) => {
+export const ChatMessage = ({ message, lastMessageRef }: ChatMessageProps) => {
   const onCopyMessage = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const selectedText = window.getSelection()?.toString().trim();
@@ -35,7 +28,7 @@ export const ChatMessage = ({
                   : 'self-start bg-gray-100 text-black'
               }`}
       onCopy={onCopyMessage}
-      ref={index === messagesLength - 1 ? lastMessageRef : null}
+      ref={lastMessageRef}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
