@@ -6,6 +6,7 @@ import {
   type ChatFormData,
   InputComponent,
 } from '@/components/chat/InputComponent.tsx';
+import { playTone } from '@/audio/playTone.ts';
 
 type ChatResponse = {
   message: string;
@@ -33,12 +34,14 @@ const ChatBot = () => {
       setError('');
       setIsBotTyping(true);
       setMessages((prev) => [...prev, { content: prompt, role: 'user' }]);
+      playTone('sent');
 
       const { data } = await axios.post<ChatResponse>('/api/chat', {
         prompt,
         conversationId: conversationId.current,
       });
 
+      playTone('received');
       setMessages((prev) => [...prev, { content: data.message, role: 'bot' }]);
     } catch (err) {
       const errorMessage =
