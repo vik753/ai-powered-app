@@ -1,15 +1,11 @@
 import axios from 'axios';
-import { Button } from '../ui/button.tsx';
-import { FaArrowUp } from 'react-icons/fa';
-import { useForm } from 'react-hook-form';
 import { useEffect, useRef, useState } from 'react';
-import * as React from 'react';
 import { TypingIndicator } from '@/components/chat/TypingIndicator.tsx';
 import { ChatMessage } from '@/components/chat/ChatMessage.tsx';
-
-type FormData = {
-  prompt: string;
-};
+import {
+  type ChatFormData,
+  InputComponent,
+} from '@/components/chat/InputComponent.tsx';
 
 type ChatResponse = {
   message: string;
@@ -28,19 +24,15 @@ const ChatBot = () => {
   const conversationId = useRef(crypto.randomUUID());
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
 
-  const { register, handleSubmit, reset, formState } = useForm<FormData>();
-
   useEffect(() => {
     lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const onSubmit = async ({ prompt }: FormData) => {
+  const onSubmitHandler = async ({ prompt }: ChatFormData) => {
     try {
       setError('');
       setIsBotTyping(true);
       setMessages((prev) => [...prev, { content: prompt, role: 'user' }]);
-
-      reset();
 
       const { data } = await axios.post<ChatResponse>('/api/chat', {
         prompt,
@@ -54,13 +46,6 @@ const ChatBot = () => {
       setError(`Something went wrong. Please try again later. ${errorMessage}`);
     } finally {
       setIsBotTyping(false);
-    }
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(onSubmit)();
     }
   };
 
@@ -79,25 +64,7 @@ const ChatBot = () => {
         {isBotTyping && <TypingIndicator />}
         {error && <div className="text-red-500">{error}</div>}
       </div>
-      <form
-        className="flex flex-col gap-2 items-end rounded-xl border-2 p-4"
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <textarea
-          {...register('prompt', {
-            required: true,
-            validate: (value) => value.trim().length > 0,
-          })}
-          className="w-full border-0 focus:outline-0 resize-none"
-          placeholder="Ask anything"
-          maxLength={1000}
-          onKeyDown={onKeyDown}
-          autoFocus={true}
-        />
-        <Button className="rounded-full w-9 h-9" disabled={!formState.isValid}>
-          <FaArrowUp />
-        </Button>
-      </form>
+      <InputComponent onSubmit={onSubmitHandler} />
     </div>
   );
 };
