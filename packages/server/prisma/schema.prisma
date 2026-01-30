@@ -7,10 +7,12 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  engineType = "library"
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Product {
