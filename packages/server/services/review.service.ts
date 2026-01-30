@@ -1,10 +1,6 @@
 import { type Review } from '../generated/prisma/client.ts';
 import { ReviewRepository } from '../repositories/review.repository.ts';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { llmClient } from '../llm/client.ts';
 
 export const ReviewService = {
   async getReviews(productId: number): Promise<Review[]> {
@@ -21,13 +17,7 @@ export const ReviewService = {
                     ${joinedReviews}
                     `;
 
-    const response = await client.responses.create({
-      model: 'gpt-4.1-mini',
-      input: prompt,
-      temperature: 0.2,
-      max_output_tokens: 500,
-    });
-
-    return response.output_text;
+    const response = await llmClient.generateText({ prompt, maxTokens: 500 });
+    return response.text;
   },
 };
