@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@types/express": "^5.0.6",
+    "dayjs": "^1.11.19",
     "express": "^5.2.1"
   }
 }
