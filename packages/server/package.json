@@ -8,12 +8,14 @@
     "dev": "bun --watch run index.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "prisma": "^7.3.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@prisma/client": "^7.3.0",
     "@types/express": "^5.0.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
