@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { StarRating } from '@/components/reviews/StarRating.tsx';
-import Skeleton from 'react-loading-skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button.tsx';
 import { HiSparkles } from 'react-icons/hi';
+import { ReviewSkeleton } from '@/components/reviews/ReviewSkeleton.tsx';
 
 type ReviewListProps = {
   productId: number;
@@ -18,20 +18,17 @@ type Review = {
   createdAt: string;
 };
 
-type Summary = {
-  id: number;
-  productId: number;
-  content: string;
-  generatedAt: string;
-  expiresAt: string;
-};
+type Summary = string;
 
 type GetReviewsResponse = {
   summary: Summary | null;
   reviews: Review[];
 };
 
-const ERROR_MESSAGE = "We can't getting reviews data. Please try again later.";
+const REVIEW_ERROR_MESSAGE =
+  "We can't getting reviews data. Please try again later.";
+const SUMMARY_ERROR_MESSAGE =
+  "We can't getting summary. Please try again later.";
 
 export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
   const {
@@ -42,6 +39,9 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
     queryKey: ['reviews', productId],
     queryFn: () => fetchReviewData(),
   });
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const fetchReviewData = async () => {
     const { data } = await axios.get<GetReviewsResponse>(
@@ -50,48 +50,64 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
     return data;
   };
 
+  const summarizeReviews = async () => {
+    try {
+      setSummaryError(null);
+      setIsSummaryLoading(true);
+      const { data } = await axios.post<{ summary: Summary }>(
+        `/api/products/${productId}/reviews/summarize`
+      );
+      setSummary(data.summary);
+    } catch (err) {
+      console.error(err);
+      setSummaryError(SUMMARY_ERROR_MESSAGE);
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  };
+
   if (isLoading) {
-    return (
-      <div>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex flex-col gap-y-2 mb-2 border-b pb-2">
-            <Skeleton width={100} />
-            <Skeleton width={180} />
-            <Skeleton count={3} />
-          </div>
-        ))}
-      </div>
-    );
+    return <ReviewSkeleton />;
   }
 
   if (error) {
     return (
       <div
         className={'text-red-500'}
-      >{`${ERROR_MESSAGE} ${error.message}`}</div>
+      >{`${REVIEW_ERROR_MESSAGE} ${error.message}`}</div>
     );
   }
-
-  console.log('reviewData', reviewData);
 
   if (!reviewData?.reviews.length) {
     return null;
   }
 
+  const currentSummary = reviewData?.summary || summary;
+
   return (
     <div>
       <div>
         <div className={'mb-2 border-b pb-3'}>
-          {reviewData?.summary ? (
+          {currentSummary ? (
             <>
               <h2 className={'font-bold pb-2'}>Summary</h2>
-              <p>{reviewData?.summary.content}</p>
+              <p>{currentSummary}</p>
             </>
           ) : (
-            <Button>
-              <HiSparkles />
-              Summarize
-            </Button>
+            <>
+              <Button onClick={summarizeReviews} disabled={isSummaryLoading}>
+                <HiSparkles />
+                Summarize
+              </Button>
+              {isSummaryLoading && (
+                <div>
+                  <ReviewSkeleton count={1} />
+                </div>
+              )}
+              {summaryError && (
+                <div className={'text-red-500 mt-2'}>{summaryError}</div>
+              )}
+            </>
           )}
         </div>
       </div>
