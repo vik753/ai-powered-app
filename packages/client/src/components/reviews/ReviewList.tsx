@@ -35,21 +35,12 @@ const SUMMARY_ERROR_MESSAGE =
   "We couldn't get summary. Please try again later.";
 
 export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
-  const {
-    data: reviewData,
-    isLoading,
-    error,
-  } = useQuery<GetReviewsResponse, Error>({
+  const reviewsQuery = useQuery<GetReviewsResponse, Error>({
     queryKey: ['reviews', productId],
     queryFn: () => fetchReviewData(),
   });
 
-  const {
-    mutate: handleSummarize,
-    isPending: isSummaryLoading,
-    error: summaryError,
-    data: summaryData,
-  } = useMutation<SummarizeResponse, Error>({
+  const summarizeMutation = useMutation<SummarizeResponse, Error>({
     mutationFn: () => summarizeReviews(),
   });
 
@@ -67,23 +58,24 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
     return data;
   }
 
-  if (isLoading) {
+  if (reviewsQuery.isLoading) {
     return <ReviewSkeleton />;
   }
 
-  if (error) {
+  if (reviewsQuery.isError) {
     return (
       <div className={'text-red-500'}>
-        {REVIEW_ERROR_MESSAGE} {error.message}
+        {REVIEW_ERROR_MESSAGE} {reviewsQuery.error.message}
       </div>
     );
   }
 
-  if (!reviewData?.reviews.length) {
+  if (!reviewsQuery.data?.reviews.length) {
     return null;
   }
 
-  const currentSummary = reviewData?.summary || summaryData?.summary;
+  const currentSummary =
+    reviewsQuery.data?.summary || summarizeMutation.data?.summary;
 
   return (
     <div>
@@ -97,20 +89,20 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
           ) : (
             <>
               <Button
-                onClick={() => handleSummarize()}
-                disabled={isSummaryLoading}
+                onClick={() => summarizeMutation.mutate()}
+                disabled={summarizeMutation.isPending}
               >
                 <HiSparkles />
                 Summarize
               </Button>
-              {isSummaryLoading && (
+              {summarizeMutation.isPending && (
                 <div>
                   <ReviewSkeleton count={1} />
                 </div>
               )}
-              {summaryError && (
+              {summarizeMutation.isError && (
                 <div className={'text-red-500 mt-2'}>
-                  {SUMMARY_ERROR_MESSAGE} {summaryError.message}
+                  {SUMMARY_ERROR_MESSAGE} {summarizeMutation.error.message}
                 </div>
               )}
             </>
@@ -118,7 +110,7 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
         </div>
       </div>
       <div>
-        {reviewData?.reviews.map((review) => (
+        {reviewsQuery.data?.reviews.map((review) => (
           <div
             key={review.id}
             className="flex flex-col gap-y-2 mb-2 border-b pb-2"
