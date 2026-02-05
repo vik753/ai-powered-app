@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import axios from 'axios';
 import { StarRating } from '@/components/reviews/StarRating.tsx';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button.tsx';
 import { HiSparkles } from 'react-icons/hi';
 import { ReviewSkeleton } from '@/components/reviews/ReviewSkeleton.tsx';
@@ -20,51 +20,52 @@ type Review = {
 
 type Summary = string;
 
+type SummarizeResponse = {
+  summary: Summary;
+};
+
 type GetReviewsResponse = {
   summary: Summary | null;
   reviews: Review[];
 };
 
 const REVIEW_ERROR_MESSAGE =
-  "We can't getting reviews data. Please try again later.";
+  "We couldn't get reviews data. Please try again later.";
 const SUMMARY_ERROR_MESSAGE =
-  "We can't getting summary. Please try again later.";
+  "We couldn't get summary. Please try again later.";
 
 export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
   const {
     data: reviewData,
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<GetReviewsResponse, Error>({
     queryKey: ['reviews', productId],
     queryFn: () => fetchReviewData(),
   });
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  const fetchReviewData = async () => {
+  const {
+    mutate: handleSummarize,
+    isPending: isSummaryLoading,
+    error: summaryError,
+    data: summaryData,
+  } = useMutation<SummarizeResponse, Error>({
+    mutationFn: () => summarizeReviews(),
+  });
+
+  async function fetchReviewData() {
     const { data } = await axios.get<GetReviewsResponse>(
       `/api/products/${productId}/reviews`
     );
     return data;
-  };
+  }
 
-  const summarizeReviews = async () => {
-    try {
-      setSummaryError(null);
-      setIsSummaryLoading(true);
-      const { data } = await axios.post<{ summary: Summary }>(
-        `/api/products/${productId}/reviews/summarize`
-      );
-      setSummary(data.summary);
-    } catch (err) {
-      console.error(err);
-      setSummaryError(SUMMARY_ERROR_MESSAGE);
-    } finally {
-      setIsSummaryLoading(false);
-    }
-  };
+  async function summarizeReviews() {
+    const { data } = await axios.post<{ summary: Summary }>(
+      `/api/products/${productId}/reviews/summarize`
+    );
+    return data;
+  }
 
   if (isLoading) {
     return <ReviewSkeleton />;
@@ -72,9 +73,9 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
 
   if (error) {
     return (
-      <div
-        className={'text-red-500'}
-      >{`${REVIEW_ERROR_MESSAGE} ${error.message}`}</div>
+      <div className={'text-red-500'}>
+        {REVIEW_ERROR_MESSAGE} {error.message}
+      </div>
     );
   }
 
@@ -82,7 +83,7 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
     return null;
   }
 
-  const currentSummary = reviewData?.summary || summary;
+  const currentSummary = reviewData?.summary || summaryData?.summary;
 
   return (
     <div>
@@ -95,7 +96,10 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
             </>
           ) : (
             <>
-              <Button onClick={summarizeReviews} disabled={isSummaryLoading}>
+              <Button
+                onClick={() => handleSummarize()}
+                disabled={isSummaryLoading}
+              >
                 <HiSparkles />
                 Summarize
               </Button>
@@ -105,7 +109,9 @@ export const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
                 </div>
               )}
               {summaryError && (
-                <div className={'text-red-500 mt-2'}>{summaryError}</div>
+                <div className={'text-red-500 mt-2'}>
+                  {SUMMARY_ERROR_MESSAGE} {summaryError.message}
+                </div>
               )}
             </>
           )}
